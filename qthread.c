@@ -32,6 +32,8 @@ extern void do_switch(void **location_for_old_sp, void *new_value);
  */
 void *setup_stack(int *stack, void *func, void *arg1, void *arg2)
 {
+
+   // printf("%d", *stack);
   
     printf("Boom!!!\n");
 
@@ -248,23 +250,10 @@ void printActiveThreadList() {
         }
 }
 
-void allocateThreadStack(void* basePtr, void* offsetPtr) {
+void allocateThreadStack(void** basePtr, void** offsetPtr) {
 
-        basePtr = malloc(THREADSTACKSIZE);
-        offsetPtr = basePtr + THREADSTACKSIZE;
-
-	int* t1, *t2;
-
-	t1 = basePtr;
-	t2 = offsetPtr;
-
-	*t1 = 10;
-
-	*(--t2) = 0x3A3A3A3A;
-	
-
-	printf("%d\n", *t1);
-	printf("%d\n", *t2);
+        *basePtr = malloc(4096);
+        *offsetPtr = *basePtr + 4096;
 }
 
 void createAndSetupTCB(qthread_t currentTCB) {
@@ -285,7 +274,7 @@ void initThreadLib() {
 	os_thread.status = 1;
 	os_thread.prev = NULL;
 	os_thread.next = NULL;
-	allocateThreadStack(os_thread.basePtr, os_thread.offsetPtr);
+	allocateThreadStack(&os_thread.basePtr, &os_thread.offsetPtr);
 
 	setup_stack(os_thread.offsetPtr, NULL, NULL, NULL);
 
@@ -462,14 +451,12 @@ void *test_func(void *arg) {
 
 int main() {
 
-<<<<<<< HEAD
+	void *p = malloc(4096);
+
+
 	qthread_t t1;
 	qthread_create(&t1, NULL, test_func, NULL);
-=======
 printf("starting");
-qthread_t t1;
-//qthread_create(&t1, NULL, test_func, NULL);
->>>>>>> 1dcbefbd077c27e2a4977a874f4d70ffa3cd9dc1
 
 }
 
