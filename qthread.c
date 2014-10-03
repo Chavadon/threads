@@ -299,8 +299,8 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
     if(isActiveThreadListEmpty())
 	initThreadLib();
     printf("done initialize");
-    printf("%d", os_thread.basePtr);
-    printf("%d", os_thread.offsetPtr);
+    printf("%p\n", os_thread.basePtr);
+    printf("%p\n", os_thread.offsetPtr);
 /*
     qthread_t newTCB = *thread;
 
