@@ -257,12 +257,12 @@ void allocateThreadStack(void** basePtr, void** offsetPtr) {
 }
 
 void createAndSetupTCB(qthread_t currentTCB) {
-    printf("in setup and create stack");
+    printf("in setup and create stack\n");
 
 	currentTCB = (qthread_t)malloc(sizeof(struct qthread)); 
 	insertTCB(currentTCB);
-    printf("%p\n", currentTCB->basePtr);
-    printf("%p\n", currentTCB->offsetPtr);
+    printf("%p\n", &currentTCB->basePtr);
+    printf("%p\n", &currentTCB->offsetPtr);
 	allocateThreadStack(&currentTCB->basePtr, &currentTCB->offsetPtr);	
         currentTCB->detached = 0;
         currentTCB->status = 1;
