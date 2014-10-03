@@ -33,7 +33,7 @@ extern void do_switch(void **location_for_old_sp, void *new_value);
 void *setup_stack(int *stack, void *func, void *arg1, void *arg2)
 {
 
-   // printf("%d", *stack);
+    //printf("%d", *stack);
   
     printf("Boom!!!\n");
 
@@ -309,7 +309,7 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
     printf("%p\n", os_thread.basePtr);
     printf("%p\n", os_thread.offsetPtr);
 
-    qthread_t newTCB = *thread;
+    qthread_t newTCB = thread;
 
     createAndSetupTCB(newTCB);
     printf("%p\n", newTCB->basePtr);
