@@ -261,6 +261,8 @@ void createAndSetupTCB(qthread_t currentTCB) {
 
 	currentTCB = (qthread_t)malloc(sizeof(struct qthread)); 
 	insertTCB(currentTCB);
+    printf("%p\n", &currentTCB->basePtr);
+    printf("%p\n", &currentTCB->offsetPtr);
     
 	allocateThreadStack(&currentTCB->basePtr, &currentTCB->offsetPtr);	
 
