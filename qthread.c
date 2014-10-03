@@ -298,7 +298,7 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
 
     if(isActiveThreadListEmpty())
 	initThreadLib();
-    printf("done initialize");
+    printf("done initialize\n");
     printf("%p\n", os_thread.basePtr);
     printf("%p\n", os_thread.offsetPtr);
 /*
