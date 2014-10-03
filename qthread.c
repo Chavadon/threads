@@ -310,7 +310,7 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
 
     qthread_t newTCB = *thread;
 
-    createAndSetupTCB(newTCB);
+    createAndSetupTCB(&newTCB);
     setup_stack(newTCB->offsetPtr, NULL,NULL, NULL);
 
     qthread_yield();
