@@ -309,9 +309,9 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
     printf("%p\n", os_thread.basePtr);
     printf("%p\n", os_thread.offsetPtr);
 
-    qthread_t newTCB = *thread;
+    struct qthread_t newTCB = *thread;
 
-    createAndSetupTCB(&newTCB);
+    createAndSetupTCB(newTCB);
     printf("%p\n", newTCB->basePtr);
     printf("%p\n", newTCB->offsetPtr);
     setup_stack(newTCB->offsetPtr, NULL,NULL, NULL);
