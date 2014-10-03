@@ -313,8 +313,8 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
 
     createAndSetupTCB(*thread);
     printf("%p\n", newTCB->basePtr);
-    printf("%p\n", newTCB->offsetPtr);
-    setup_stack(newTCB->offsetPtr, NULL,NULL, NULL);
+    printf("%p\n", *thread->offsetPtr);
+    setup_stack(*thread->offsetPtr, NULL,NULL, NULL);
 
     qthread_yield();
 
