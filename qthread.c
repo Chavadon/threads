@@ -260,9 +260,9 @@ void createAndSetupTCB(qthread_t currentTCB) {
     printf("in setup and create stack\n");
 
 	currentTCB = (qthread_t)malloc(sizeof(struct qthread)); 
-	insertTCB(currentTCB);
+	insertTCB(&currentTCB);
     
-	allocateThreadStack(*currentTCB->basePtr, *currentTCB->offsetPtr);	
+	allocateThreadStack(&currentTCB->basePtr, &currentTCB->offsetPtr);	
 
     printf("%p\n", &currentTCB->basePtr);
     printf("%p\n", &currentTCB->offsetPtr);
