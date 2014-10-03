@@ -263,8 +263,8 @@ void createAndSetupTCB(qthread_t currentTCB) {
 	insertTCB(currentTCB);
     printf("%p\n", &currentTCB->basePtr);
     printf("%p\n", &currentTCB->offsetPtr);
-    
-	allocateThreadStack(&currentTCB->basePtr, &currentTCB->offsetPtr);	
+
+	allocateThreadStack(currentTCB->basePtr, currentTCB->offsetPtr);	
 
     printf("%p\n", &currentTCB->basePtr);
     printf("%p\n", &currentTCB->offsetPtr);
