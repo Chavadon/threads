@@ -463,7 +463,7 @@ int main() {
 	void *p = malloc(4096);
 
 
-	qthread_t *t1;
+	qthread_t t1;
 	qthread_create(&t1, NULL, test_func, NULL);
 printf("starting");
 
