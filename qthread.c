@@ -326,8 +326,23 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
     if(isActiveThreadListEmpty())
 	initThreadLib();
 
-    setup_and_create(thread,start,arg);
+    //setup_and_create(thread,start,arg);
 
+    *thread = (qthread_t)malloc(sizeof(struct qthread));
+
+    insertTCB(*thread);
+
+    (*thread)->basePtr = malloc(4096);
+    (*thread)->offsetPtr = (*thread)->basePtr + 4096;
+
+    qthread_attr_init(&(*thread)->detached);
+    (*thread)->status = 1;
+    (*thread)->prev = NULL;
+    (*thread)->next = NULL;
+    (*thread)->lastPickupTime = gettime();
+
+    (*thread)->offsetPtr = setup_stack((*thread)->offsetPtr, wrapper, start, arg);
+    
     qthread_attr_setdetachstate(&((*thread)->detached),*attr);
     
     qthread_yield();
