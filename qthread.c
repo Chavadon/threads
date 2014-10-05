@@ -328,7 +328,7 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
 
     setup_and_create(&(*thread),start,arg);
 
-    qthread_attr_setdetachstate(&(*thread)->detached,*attr);
+    qthread_attr_setdetachstate(&((*thread)->detached),*attr);
     
     qthread_yield();
 
