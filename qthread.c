@@ -194,6 +194,7 @@ int qthread_attr_init(qthread_attr_t *attr)
 int qthread_attr_setdetachstate(qthread_attr_t *attr, int detachstate)
 {
     /* your code here */
+    *attr = detachstate;
     return 0;
 }
 
@@ -291,6 +292,24 @@ void initThreadLib() {
 }
 
 
+void setup_and_create(qthread_t *thread, qthread_func_ptr_t start, void *arg){
+    *thread = (qthread_t)malloc(sizeof(struct qthread));
+
+    insertTCB(*thread);
+
+    (*thread)->basePtr = malloc(4096);
+    (*thread)->offsetPtr = (*thread)->basePtr + 4096;
+
+    qthread_attr_init(&(*thread)->detached);
+    (*thread)->status = 1;
+    (*thread)->prev = NULL;
+    (*thread)->next = NULL;
+    (*thread)->lastPickupTime = gettime();
+
+    (*thread)->offsetPtr = setup_stack((*thread)->offsetPtr, wrapper, start, arg);
+
+}
+
 /* a thread can exit by either returning from its main function or
  * calling qthread_exit(), so you should probably use a dummy start
  * function that calls the real start function and then calls
@@ -307,22 +326,10 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
     if(isActiveThreadListEmpty())
 	initThreadLib();
 
+    setup_and_create(&(*thread),start,arg);
 
-    *thread = (qthread_t)malloc(sizeof(struct qthread));
-
-    insertTCB(*thread);
-
-    (*thread)->basePtr = malloc(4096);
-    (*thread)->offsetPtr = (*thread)->basePtr + 4096;
-
-    qthread_attr_init(&(*thread)->detached);
-    (*thread)->status = 1;
-    (*thread)->prev = NULL;
-    (*thread)->next = NULL;
-    (*thread)->lastPickupTime = gettime();
-
-    (*thread)->offsetPtr = setup_stack((*thread)->offsetPtr, wrapper, start, arg);
-
+    qthread_attr_setdetachstate(&(*thread)->detached,&attr);
+    
     qthread_yield();
 
     return 0;
