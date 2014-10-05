@@ -17,13 +17,6 @@
 
 void *f1(void *arg) { printf("In func\n");return arg; }
 
-void *wrapper(qthread_func_ptr_t func, void *arg){
-
-    qthread_exit(func(NULL));
-
-}
-
-
 /*
  * do_switch is defined in do-switch.s, as the stack frame layout
  * changes with optimization level, making it difficult to do with
@@ -100,7 +93,7 @@ struct qthread {
         void* offsetPtr;
         qthread_attr_t detached;
         short status;
-	time_t lastPickupTime;
+	double lastPickupTime;
 }*activeThreadList = NULL,  *tail = NULL;
 
 /* A good organization is to keep a pointer to the 'current'
@@ -153,6 +146,13 @@ void findNextRunnableThread(qthread_t *nextRunnable) {
  * without switching. (why? because you haven't saved the current
  * stack pointer)
  */
+void *wrapper(qthread_func_ptr_t func, void *arg){
+
+    qthread_exit(func(arg));
+
+}
+
+
 
 /* qthread_yield - yield to the next runnable thread.
  */
@@ -161,10 +161,17 @@ int qthread_yield(void)
     
     qthread_t nextRunnableThread = NULL, prev = NULL;
     findNextRunnableThread(&nextRunnableThread);
-    prev = current;
-    current = nextRunnableThread;
-    do_switch(&prev->offsetPtr, nextRunnableThread->offsetPtr);
 
+    if(nextRunnableThread != NULL){
+
+        prev = current;
+        prev->status = 3;
+        current = nextRunnableThread;
+        current->status = 2;
+        current->lastPickupTime = gettime();
+        do_switch(&prev->offsetPtr, nextRunnableThread->offsetPtr);
+
+    }
     return 0;
 }
 
@@ -270,35 +277,14 @@ void allocateThreadStack(void** basePtr, void** offsetPtr) {
         *offsetPtr = *basePtr + 4096;
 }
 
-void createAndSetupTCB(qthread_t currentTCB) {
-
-    currentTCB = (qthread_t)malloc(sizeof(struct qthread)); 
-    insertTCB(currentTCB);
-
-    printActiveThreadList();
-
-    allocateThreadStack(&currentTCB->basePtr, &currentTCB->offsetPtr);	
-  
-
-    currentTCB->basePtr = malloc(4096);
-    currentTCB->offsetPtr = currentTCB->basePtr + 4096;
-    
-    currentTCB->detached = 0;
-    currentTCB->status = 1;
-    currentTCB->prev = NULL;
-    currentTCB->next = NULL;
-    currentTCB->lastPickupTime = time(0);
-    printf("Leaving setup and create stack\n");
-}
-
 void initThreadLib() {
 
 	os_thread.tid = 0;
-	os_thread.detached = 0;
+	qthread_attr_init(&os_thread.detached);
 	os_thread.status = 1;
 	os_thread.prev = NULL;
 	os_thread.next = NULL;
-	os_thread.lastPickupTime = time(0);
+	os_thread.lastPickupTime = gettime();
 	allocateThreadStack(&os_thread.basePtr, &os_thread.offsetPtr);
 
 	os_thread.offsetPtr = setup_stack(os_thread.offsetPtr, NULL, NULL, NULL);
@@ -321,7 +307,6 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
     if(isActiveThreadListEmpty())
 	initThreadLib();
 
-//    createAndSetupTCB(*thread);
 
     *thread = (qthread_t)malloc(sizeof(struct qthread));
 
@@ -330,14 +315,11 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
     (*thread)->basePtr = malloc(4096);
     (*thread)->offsetPtr = (*thread)->basePtr + 4096;
 
-    (*thread)->detached = 0;
+    qthread_attr_init(&(*thread)->detached);
     (*thread)->status = 1;
     (*thread)->prev = NULL;
     (*thread)->next = NULL;
-    (*thread)->lastPickupTime = time(0);
-
-
-    printActiveThreadList();
+    (*thread)->lastPickupTime = gettime();
 
     (*thread)->offsetPtr = setup_stack((*thread)->offsetPtr, wrapper, start, arg);
 
@@ -353,7 +335,9 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
  */
 void qthread_exit(void *val)
 {
-    printf("Exting\n");
+
+    
+
     exit(0);
 }
 
