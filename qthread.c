@@ -1,4 +1,4 @@
-//*
+/*
  * file:        qthread.c
  * description: simple emulation of POSIX threads
  * class:       CS 7600, Spring 2013
