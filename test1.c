@@ -41,7 +41,6 @@ void test1(void)
  * run with N=2,3,4
  */
 int t1rdy;
-qthread_cond_t cnd;
 qthread_mutex_t m;
 void *f2(void *v)
 {
