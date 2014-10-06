@@ -25,6 +25,7 @@ struct qthread;
 struct qthread_mutex;
 struct qthread_cond;
 
+
 /* You are free to change these type definitions, but the ones
  * provided can work fairly well.
  */
@@ -68,5 +69,37 @@ ssize_t qthread_read(int fd, void *buf, size_t len);
 struct sockaddr;
 int     qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 ssize_t qthread_write(int fd, const void *buf, size_t len);
+
+
+
+
+struct qthread {
+    /*
+     * note - you can't use 'qthread_t*' in this definition, due to C
+     * limitations.
+     * use 'struct qthread *' instead, which means the same thing:
+     *    struct qthread *next;
+     */
+
+        long tid;
+        qthread_t prev;
+        qthread_t next;
+        void* basePtr;
+        void* offsetPtr;
+        qthread_attr_t detached;
+        short status;
+        double wakeupTime;
+        void* exitStatus;
+
+};
+
+
+struct qthread_mutex {
+
+        short state;
+        qthread_t current;
+        qthread_t waitingList;
+};
+
 
 #endif /* __QTHREAD_H__ */

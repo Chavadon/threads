@@ -11,6 +11,8 @@
 
 #include "qthread.h"
 
+typedef struct qthread_mutex qthread_mutex_t;
+
 /* 1. create and join. Create N threads, which don't do anything
  * except return a value. (and possibly print something) Call
  * qthread_join() to wait for each of them.
@@ -91,7 +93,7 @@ int main(int argc, char **argv)
      */
 
     test1();
-    test2();
+//    test2();
     
     /* 3. condvar and sleep.
      * initialize a condvar and a mutex

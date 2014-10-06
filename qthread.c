@@ -14,6 +14,9 @@
 
 #define THREADSTACKSIZE 4096
 
+qthread_t activeThreadList = NULL;
+qthread_t tail = NULL;
+
 
 //void *f1(void *arg) { printf("In thread 1\n");return arg; }
 //void *f2(void *arg) { printf("In thread 2\n");return arg; }
@@ -25,6 +28,7 @@
  * inline assembler.
  */
 extern void do_switch(void **location_for_old_sp, void *new_value);
+
 
 /*
  * setup_stack(stack, function, arg1, arg2) - sets up a stack so that
@@ -79,15 +83,15 @@ static double gettime(void)
 /* We don't have to define the qthread structure in qthread.h, since
  * the user program only sees pointers to it.
  */
-struct qthread {
-    /*
+/*struct qthread {
+    *
      * note - you can't use 'qthread_t*' in this definition, due to C
      * limitations.
      * use 'struct qthread *' instead, which means the same thing:
      *    struct qthread *next;
      */
 
-        long tid;
+ /*       long tid;
         qthread_t prev;
         qthread_t next;
         void* basePtr;
@@ -98,15 +102,17 @@ struct qthread {
 	void* exitStatus;
 
 }*activeThreadList = NULL,  *tail = NULL;
-
+*/
 /* Mutex
  */
-struct qthread_mutex {
+/*struct qthread_mutex {
 
 	short state;
 	qthread_t current;
 	qthread_t waitingList;
 };
+*/
+
 
 /* Condition variable
  */
