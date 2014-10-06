@@ -48,7 +48,7 @@ void sleep_exp(double T)
         t = T*10;
     if (t < 0.5)
         t = 0.5;
-    qthread_usleep((int)(10000 * t));
+    qthread_usleep((int)(1 * t));
 }
 
 /* get_forks() method - called before a philospher starts eating.
@@ -123,7 +123,7 @@ static void handler(int sig)
 void wait_until_done(void)
 {
     while (!done)
-        qthread_usleep(100000);
+        qthread_usleep(1);
 }
 
 int main(int argc, char **argv)

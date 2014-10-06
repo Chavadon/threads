@@ -416,7 +416,7 @@ int qthread_mutex_lock(qthread_mutex_t *mutex)
 	}
 
 	newNode->prev = current;   	
-	qthread_usleep(1000);
+	qthread_usleep(1);
     }
 
 

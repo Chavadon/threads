@@ -48,7 +48,7 @@ void *f2(void *v)
 {
     qthread_mutex_lock(&m);
     t1rdy = 1;
-    qthread_usleep(1000000);
+    qthread_usleep(1);
     qthread_mutex_unlock(&m);
 
     return 0;
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
      */
 
     test1();
-//    test2();
+    test2();
     
     /* 3. condvar and sleep.
      * initialize a condvar and a mutex
