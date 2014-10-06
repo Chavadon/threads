@@ -26,7 +26,7 @@
  */
 extern void do_switch(void **location_for_old_sp, void *new_value);
 
-
+typedef struct qthread_cond qthread_cond_t;
 /*
  * setup_stack(stack, function, arg1, arg2) - sets up a stack so that
  * switching to it from 'do_switch' will call 'function' with arguments
