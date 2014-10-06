@@ -1,4 +1,4 @@
-/*
+//*
  * file:        qthread.c
  * description: simple emulation of POSIX threads
  * class:       CS 7600, Spring 2013
@@ -15,7 +15,9 @@
 #define THREADSTACKSIZE 4096
 
 
-void *f1(void *arg) { printf("In func\n");return arg; }
+//void *f1(void *arg) { printf("In thread 1\n");return arg; }
+//void *f2(void *arg) { printf("In thread 2\n");return arg; }
+
 
 /*
  * do_switch is defined in do-switch.s, as the stack frame layout
@@ -87,14 +89,31 @@ struct qthread {
      */
 
         long tid;
-        struct qthread *prev;
-        struct qthread *next;
+        qthread_t prev;
+        qthread_t next;
         void* basePtr;
         void* offsetPtr;
         qthread_attr_t detached;
         short status;
-	double lastPickupTime;
+	double wakeupTime;
+	void* exitStatus;
+
 }*activeThreadList = NULL,  *tail = NULL;
+
+/* Mutex
+ */
+struct qthread_mutex {
+
+	short state;
+	qthread_t current;
+	qthread_t waitingList;
+};
+
+/* Condition variable
+ */
+struct qthread_cond {
+    /* your code here */
+};
 
 /* A good organization is to keep a pointer to the 'current'
  * (i.e. running) thread, and a list of 'active' threads (not
@@ -110,73 +129,29 @@ struct qthread os_thread = {};
 qthread_t current = &os_thread;
 
 
+void activeThreadListRotateLeft() {
+
+        tail->next = activeThreadList;
+        activeThreadList->prev = tail;
+        activeThreadList = activeThreadList->next;
+        tail = tail->next;
+        activeThreadList->prev = NULL;
+        tail->next = NULL;
+}
+
+
 void findNextRunnableThread(qthread_t *nextRunnable) {
 
-        if(activeThreadList != NULL) {
-
-                qthread_t iterator = activeThreadList;
-
-                *nextRunnable = NULL;
-
-                while(iterator != NULL) {
-
-                        if(((iterator->status == 1) || (iterator->status == 3))) {
-                                if(*nextRunnable != NULL) {
-
-                                        if((*nextRunnable)->lastPickupTime > iterator->lastPickupTime)
-
-                                                *nextRunnable = iterator;
-
-                                } else
-                                        *nextRunnable = iterator;
-
-			iterator = iterator->next;
-
-
-                        }
-                }
-        }
+	do {
+		if( ( (activeThreadList->status == 1) || (activeThreadList->status == 3) ) && (activeThreadList->wakeupTime <= gettime()) && (activeThreadList->tid != current->tid) ) {
+		
+			*nextRunnable = activeThreadList;
+			activeThreadListRotateLeft();
+			break;
+		} else
+			activeThreadListRotateLeft();
+	}while(1);
 }
-
-
-
-/* Beware - you cannot use do_switch to switch from a thread to
- * itself. If there are no other active threads (or after a timeout
- * the first scheduled thread is the current one) you should return
- * without switching. (why? because you haven't saved the current
- * stack pointer)
- */
-void *wrapper(qthread_func_ptr_t func, void *arg){
-
-    qthread_exit(func(arg));
-
-}
-
-
-
-/* qthread_yield - yield to the next runnable thread.
- */
-int qthread_yield(void)
-{
-    
-    qthread_t nextRunnableThread = NULL, prev = NULL;
-    findNextRunnableThread(&nextRunnableThread);
-
-    if(nextRunnableThread != NULL){
-
-        prev = current;
-        prev->status = 3;
-        current = nextRunnableThread;
-        current->status = 2;
-        current->lastPickupTime = gettime();
-        do_switch(&prev->offsetPtr, nextRunnableThread->offsetPtr);
-
-    }
-    return 0;
-}
-
-
-
 
 /* Initialize a thread attribute structure. We're using an 'int' for
  * this, so just set it to zero.
@@ -193,29 +168,52 @@ int qthread_attr_init(qthread_attr_t *attr)
  */
 int qthread_attr_setdetachstate(qthread_attr_t *attr, int detachstate)
 {
-    /* your code here */
     *attr = detachstate;
     return 0;
 }
 
-void insertTCB(qthread_t newThread){
+long getNextTID() {
 
-        if(activeThreadList == NULL) {
+	long nextTID = 0;
 
-                activeThreadList = tail = newThread;
-                newThread->tid = os_thread.tid + 1;
+	qthread_t iterator = activeThreadList;
 
+	while(iterator != NULL) {
 
-        } else {
+		nextTID++;
+		iterator = iterator->next;
+	}
+	
+	return nextTID;
+}
 
-		qthread_t front = activeThreadList;
+/* Beware - you cannot use do_switch to switch from a thread to
+ * itself. If there are no other active threads (or after a timeout
+ * the first scheduled thread is the current one) you should return
+ * without switching. (why? because you haven't saved the current
+ * stack pointer)
+ */
+void *wrapper(qthread_func_ptr_t func, void *arg) {
 
-                newThread->next = front;
-                front->prev = newThread;
-                front = front->prev;
-                activeThreadList = front;
-                newThread->tid  = newThread->next->tid + 1;
-        }
+    qthread_exit(func(arg));
+}
+
+/* qthread_yield - yield to the next runnable thread.
+ */
+int qthread_yield(void) {
+    qthread_t nextRunnableThread = NULL, prev = NULL;
+    findNextRunnableThread(&nextRunnableThread);
+
+    if(nextRunnableThread != NULL){
+
+        prev = current;
+	if(prev->status != 4)
+		prev->status = 3;
+        current = nextRunnableThread;
+        current->status = 2;
+        do_switch(&prev->offsetPtr, nextRunnableThread->offsetPtr);
+    }
+    return 0;
 }
 
 void freeTCB(long toBeDeleted) {
@@ -227,41 +225,86 @@ void freeTCB(long toBeDeleted) {
                 while(iterator != NULL) {
                         if(iterator->tid == toBeDeleted) {
 
-                                free(iterator->basePtr);
+				if(toBeDeleted == activeThreadList->tid) {
 
-                                if(iterator->detached) {
+					iterator = activeThreadList;
+					activeThreadList = activeThreadList->next;
+					activeThreadList->prev = NULL;
+					iterator->next = NULL;
 
-                                        iterator->prev->next = iterator->next;
-                                        iterator->next->prev = iterator->prev;
-                                        free(iterator);
+				} else if(toBeDeleted == tail->tid) {
 
-                                } else {
+					iterator = tail;
+					tail = tail->prev;
+					tail->next = NULL;
+					iterator->prev = NULL;
 
-                                        iterator->offsetPtr = NULL;
-                                        iterator->status = 4;
-                                        iterator->detached = -1;
-                                }
+				} else {
 
+					iterator->prev->next = iterator->next;
+        	                        iterator->next->prev = iterator->prev;
+					iterator->next = NULL;
+					iterator->prev = NULL;
+				}
+
+				free(iterator->basePtr);
+                        	free(iterator);
                                 break;
-
                         } else
                                 iterator = iterator->next;
                 }
-
         } else
                 fprintf(stderr, "List Empty!!! Cannot Free the given thread!!!");
-
 }
 
-int isActiveThreadListEmpty() {
+int qthread_join(qthread_t thread, void **retval){
 
-        return (activeThreadList == NULL)?1:0;
+	if(thread != NULL){
 
+		if(thread->status != 4)
+			qthread_yield();
+
+		if(retval != NULL){
+
+			qthread_t iterator = activeThreadList;
+
+			while(iterator != NULL) {
+
+				if(iterator->tid == thread->tid) {
+			
+					*retval = iterator->exitStatus;
+					break;
+				}	
+
+				iterator = iterator->next;
+			}
+		}
+
+		thread->detached = 1;
+		freeTCB(thread->tid);
+	} else 
+		return -1;
+
+	return 0;
+}
+
+    
+/* qthread_exit - sort of like qthread_yield, except we never
+ * return. If the thread is joinable you need to save 'val' for a
+ * future call to qthread_join; otherwise you can free allocated
+ * memory. 
+ */
+void qthread_exit(void *val) {
+
+    if(!current->detached)
+	    current->exitStatus = val;
+    current->status = 4;
+    qthread_yield();
 }
 
 void printActiveThreadList() {
 
-        if(activeThreadList){
+        if(activeThreadList != NULL){
 
                 qthread_t temp = activeThreadList;
 
@@ -282,32 +325,13 @@ void initThreadLib() {
 
 	os_thread.tid = 0;
 	qthread_attr_init(&os_thread.detached);
-	os_thread.status = 1;
+	os_thread.status = 2;
 	os_thread.prev = NULL;
 	os_thread.next = NULL;
-	os_thread.lastPickupTime = gettime();
+	os_thread.exitStatus = NULL;
 	allocateThreadStack(&os_thread.basePtr, &os_thread.offsetPtr);
-
 	os_thread.offsetPtr = setup_stack(os_thread.offsetPtr, NULL, NULL, NULL);
-}
-
-
-void setup_and_create(qthread_t *thread, qthread_func_ptr_t start, void *arg){
-    *thread = (qthread_t)malloc(sizeof(struct qthread));
-
-    insertTCB(*thread);
-
-    (*thread)->basePtr = malloc(4096);
-    (*thread)->offsetPtr = (*thread)->basePtr + 4096;
-
-    qthread_attr_init(&(*thread)->detached);
-    (*thread)->status = 1;
-    (*thread)->prev = NULL;
-    (*thread)->next = NULL;
-    (*thread)->lastPickupTime = gettime();
-
-    (*thread)->offsetPtr = setup_stack((*thread)->offsetPtr, wrapper, start, arg);
-
+	activeThreadList = tail = &os_thread;
 }
 
 /* a thread can exit by either returning from its main function or
@@ -321,60 +345,49 @@ void setup_and_create(qthread_t *thread, qthread_func_ptr_t start, void *arg){
 int qthread_create(qthread_t *thread, qthread_attr_t *attr,
                    qthread_func_ptr_t start, void *arg)
 {
-
-
-    if(isActiveThreadListEmpty())
+    if(activeThreadList == NULL) {
 	initThreadLib();
-
-    //setup_and_create(thread,start,arg);
+    }
 
     *thread = (qthread_t)malloc(sizeof(struct qthread));
 
-    insertTCB(*thread);
+    (*thread)->tid = getNextTID();
 
+    (*thread)->prev = NULL;
     (*thread)->basePtr = malloc(4096);
     (*thread)->offsetPtr = (*thread)->basePtr + 4096;
-
     qthread_attr_init(&(*thread)->detached);
     (*thread)->status = 1;
-    (*thread)->prev = NULL;
-    (*thread)->next = NULL;
-    (*thread)->lastPickupTime = gettime();
-
+    (*thread)->exitStatus = NULL;
     (*thread)->offsetPtr = setup_stack((*thread)->offsetPtr, wrapper, start, arg);
-    
-    qthread_attr_setdetachstate(&((*thread)->detached),*attr);
-    
+    (*thread)->wakeupTime = 0;
+    (*thread)->next = activeThreadList;
+    activeThreadList->prev = *thread;
+    activeThreadList = activeThreadList->prev;
     qthread_yield();
 
     return 0;
 }
 
-/* qthread_exit - sort of like qthread_yield, except we never
- * return. If the thread is joinable you need to save 'val' for a
- * future call to qthread_join; otherwise you can free allocated
- * memory. 
- */
-void qthread_exit(void *val)
-{
-
-    
-
-    exit(0);
-}
-
-/* qthread_mutex_init/destroy - initialize (destroy) a mutex. Ignore
- * 'attr' - mutexes are non-recursive, non-debugging, and
+/* 'attr' - mutexes are non-recursive, non-debugging, and
  * non-any-other-POSIX-feature. 
  */
 int qthread_mutex_init(qthread_mutex_t *mutex, qthread_mutexattr_t *attr)
 {
-    /* your code here */
+    
+    mutex->state = 0;
+    mutex->current = NULL;
+    mutex->waitingList = NULL;
+
     return 0;
 }
+
 int qthread_mutex_destroy(qthread_mutex_t *mutex)
 {
-    /* your code here */
+    mutex->state = 0;
+    mutex->current = NULL;
+    mutex->waitingList = NULL;
+ 
     return 0;
 }
 
@@ -382,12 +395,65 @@ int qthread_mutex_destroy(qthread_mutex_t *mutex)
  */
 int qthread_mutex_lock(qthread_mutex_t *mutex)
 {
-    /* your code here */
+    while(mutex->state) {
+
+	qthread_t newNode = (qthread_t)malloc(sizeof(qthread_t));
+
+	if(mutex->waitingList == NULL) {
+
+		mutex->waitingList = newNode;
+		newNode->next = NULL;
+
+	} else {
+
+		newNode->next = mutex->waitingList;
+		mutex->waitingList = newNode;
+	}
+
+	newNode->prev = current;   	
+	qthread_usleep(1000);
+    }
+
+
+    if(mutex->waitingList != NULL) {
+
+	qthread_t iterator = mutex->waitingList;
+	qthread_t prev = NULL;
+
+	while(iterator != NULL) {
+
+		if(iterator->prev == current) {
+
+			if(prev == NULL) {
+
+				mutex->waitingList = iterator->next;
+
+			} else {
+
+				prev->next = iterator->next;
+			}
+
+			iterator->prev = NULL;
+			free(iterator);
+			break;
+		}
+
+		prev = iterator;
+		iterator = iterator->next;
+	}
+    }
+
+    mutex->state = 1;
+    mutex->current = current;
+
     return 0;
 }
+
+
 int qthread_mutex_unlock(qthread_mutex_t *mutex)
 {
-    /* your code here */
+    mutex->state = 0;
+    mutex->current = NULL;
     return 0;
 }
 
@@ -444,7 +510,8 @@ int qthread_cond_broadcast(qthread_cond_t *cond)
  */
 int qthread_usleep(long int usecs)
 {
-    /* your code here */
+    current->wakeupTime = gettime() + usecs;
+    qthread_yield();
     return 0;
 }
 
@@ -484,15 +551,16 @@ ssize_t qthread_write(int sockfd, const void *buf, size_t len)
     return 0;
 }
 
-
+/*
 int main() {
 
-	void *p = malloc(4096);
-
-
-	qthread_t t1;
+	qthread_t t1, t2;
 	qthread_create(&t1, NULL, f1, NULL);
-printf("starting");
+	qthread_create(&t2, NULL, f2, NULL);
 
+	qthread_join(t1, NULL);
+	qthread_join(t2, NULL);
+
+	printf("starting");
 }
-
+*/
