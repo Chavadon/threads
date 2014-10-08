@@ -18,10 +18,6 @@ qthread_t activeThreadList = NULL;
 qthread_t tail = NULL;
 
 
-//void *f1(void *arg) { printf("In thread 1\n");return arg; }
-//void *f2(void *arg) { printf("In thread 2\n");return arg; }
-
-
 /*
  * do_switch is defined in do-switch.s, as the stack frame layout
  * changes with optimization level, making it difficult to do with
@@ -79,46 +75,6 @@ static double gettime(void)
     gettimeofday(&tv, NULL);
     return tv.tv_sec + tv.tv_usec/1.0e6;
 }
-
-/* We don't have to define the qthread structure in qthread.h, since
- * the user program only sees pointers to it.
- */
-/*struct qthread {
-    *
-     * note - you can't use 'qthread_t*' in this definition, due to C
-     * limitations.
-     * use 'struct qthread *' instead, which means the same thing:
-     *    struct qthread *next;
-     */
-
- /*       long tid;
-        qthread_t prev;
-        qthread_t next;
-        void* basePtr;
-        void* offsetPtr;
-        qthread_attr_t detached;
-        short status;
-	double wakeupTime;
-	void* exitStatus;
-
-}*activeThreadList = NULL,  *tail = NULL;
-*/
-/* Mutex
- */
-/*struct qthread_mutex {
-
-	short state;
-	qthread_t current;
-	qthread_t waitingList;
-};
-*/
-
-
-/* Condition variable
- */
-struct qthread_cond {
-    /* your code here */
-};
 
 /* A good organization is to keep a pointer to the 'current'
  * (i.e. running) thread, and a list of 'active' threads (not
@@ -180,7 +136,6 @@ int qthread_attr_setdetachstate(qthread_attr_t *attr, int detachstate)
 long getNextTID() {
 
 	long nextTID = 0;
-
 	qthread_t iterator = activeThreadList;
 
 	while(iterator != NULL) {
@@ -258,6 +213,13 @@ void freeTCB(long toBeDeleted) {
                         } else
                                 iterator = iterator->next;
                 }
+
+		if((activeThreadList->next == NULL) && (activeThreadList->tid == 0)) {
+
+			free(activeThreadList->basePtr);
+			activeThreadList = NULL;
+		}
+
         } else
                 fprintf(stderr, "List Empty!!! Cannot Free the given thread!!!");
 }
@@ -287,6 +249,7 @@ int qthread_join(qthread_t thread, void **retval){
 
 		thread->detached = 1;
 		freeTCB(thread->tid);
+
 	} else 
 		return -1;
 
@@ -379,20 +342,17 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
  */
 int qthread_mutex_init(qthread_mutex_t *mutex, qthread_mutexattr_t *attr)
 {
-    
     mutex->state = 0;
-    mutex->current = NULL;
-    mutex->waitingList = NULL;
-
     return 0;
 }
 
 int qthread_mutex_destroy(qthread_mutex_t *mutex)
 {
-    mutex->state = 0;
-    mutex->current = NULL;
-    mutex->waitingList = NULL;
- 
+    if(mutex != NULL) {
+    	mutex->state = 0;
+    	free(mutex);
+    }
+
     return 0;
 }
 
@@ -401,56 +361,10 @@ int qthread_mutex_destroy(qthread_mutex_t *mutex)
 int qthread_mutex_lock(qthread_mutex_t *mutex)
 {
     while(mutex->state) {
-
-	qthread_t newNode = (qthread_t)malloc(sizeof(qthread_t));
-
-	if(mutex->waitingList == NULL) {
-
-		mutex->waitingList = newNode;
-		newNode->next = NULL;
-
-	} else {
-
-		newNode->next = mutex->waitingList;
-		mutex->waitingList = newNode;
-	}
-
-	newNode->prev = current;   	
 	qthread_usleep(1);
     }
 
-
-    if(mutex->waitingList != NULL) {
-
-	qthread_t iterator = mutex->waitingList;
-	qthread_t prev = NULL;
-
-	while(iterator != NULL) {
-
-		if(iterator->prev == current) {
-
-			if(prev == NULL) {
-
-				mutex->waitingList = iterator->next;
-
-			} else {
-
-				prev->next = iterator->next;
-			}
-
-			iterator->prev = NULL;
-			free(iterator);
-			break;
-		}
-
-		prev = iterator;
-		iterator = iterator->next;
-	}
-    }
-
     mutex->state = 1;
-    mutex->current = current;
-
     return 0;
 }
 
@@ -458,7 +372,6 @@ int qthread_mutex_lock(qthread_mutex_t *mutex)
 int qthread_mutex_unlock(qthread_mutex_t *mutex)
 {
     mutex->state = 0;
-    mutex->current = NULL;
     return 0;
 }
 
@@ -467,13 +380,19 @@ int qthread_mutex_unlock(qthread_mutex_t *mutex)
  */
 int qthread_cond_init(qthread_cond_t *cond, qthread_condattr_t *attr)
 {
-    /* your code here */
+    cond->waitingList = NULL;
     return 0;
 }
+
 int qthread_cond_destroy(qthread_cond_t *cond)
 {
-    /* your code here */
+    if(cond != NULL) {
+
+	qthread_cond_broadcast(cond);
+    }
+
     return 0;
+
 }
 
 /* qthread_cond_wait - unlock the mutex and wait on 'cond' until
@@ -481,7 +400,24 @@ int qthread_cond_destroy(qthread_cond_t *cond)
  */
 int qthread_cond_wait(qthread_cond_t *cond, qthread_mutex_t *mutex)
 {
-    /* your code here */
+    qthread_mutex_unlock(mutex);
+    current->condVarStatus = 1;
+    struct qthreadList *node = (struct qthreadList*)malloc(sizeof(struct qthreadList));
+    node->thread = current;
+
+    if(cond->waitingList == NULL) {
+
+	node->next = NULL;
+
+    } else {
+
+	node->next = cond->waitingList;
+    }
+
+    cond->waitingList = node;
+    qthread_usleep(1);
+    qthread_mutex_lock(mutex);
+
     return 0;
 }
 
@@ -490,13 +426,50 @@ int qthread_cond_wait(qthread_cond_t *cond, qthread_mutex_t *mutex)
  */
 int qthread_cond_signal(qthread_cond_t *cond)
 {
-    /* your code here */
+    if(cond->waitingList != NULL) {
+
+	struct qthreadList *toBeFreed = NULL;
+        struct qthreadList *prev = NULL;	
+
+	if(cond->waitingList->thread->tid == current->tid) {
+
+		toBeFreed = cond->waitingList;
+		cond->waitingList = cond->waitingList->next;
+
+	} else {
+
+		struct qthreadList *iterator = cond->waitingList->next;
+		struct qthreadList *prev = cond->waitingList;
+		while(iterator->next != NULL) {
+
+			if(iterator->thread->tid == current->tid) {
+				prev->next = iterator->next;
+				free(iterator);
+				break;
+			}
+			else {
+				prev = iterator;
+				iterator = iterator->next;
+			}	
+		}
+	}
+	
+    }
+    
     return 0;
 }
 
 int qthread_cond_broadcast(qthread_cond_t *cond)
 {
-    /* your code here */
+
+    if(cond->waitingList != NULL) {
+
+	while(cond->waitingList != NULL) {
+
+	    qthread_cond_signal(cond);
+	}
+    }
+
     return 0;
 }
 
@@ -513,8 +486,8 @@ int qthread_cond_broadcast(qthread_cond_t *cond)
 /* qthread_usleep - yield to next runnable thread, making arrangements
  * to be put back on the active list after 'usecs' timeout. 
  */
-int qthread_usleep(long int usecs)
-{
+int qthread_usleep(long int usecs) {
+
     current->wakeupTime = gettime() + usecs;
     qthread_yield();
     return 0;
@@ -525,8 +498,8 @@ int qthread_usleep(long int usecs)
  * file descriptors to go in the big scheduling 'select()' and switch
  * to another thread.
  */
-ssize_t qthread_read(int sockfd, void *buf, size_t len)
-{
+ssize_t qthread_read(int sockfd, void *buf, size_t len) {
+
     /* set non-blocking mode every time. If we added some more
      * wrappers we could set non-blocking mode from the beginning, but
      * this is a lot simpler (if less efficient)
@@ -542,8 +515,8 @@ ssize_t qthread_read(int sockfd, void *buf, size_t len)
  * and switch to another thread. Note that accept() counts as a 'read'
  * for the select call.
  */
-int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
-{
+int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+
     return 0;
 }
 
@@ -551,21 +524,9 @@ int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
  * - it can block if the network is slow, although it's not likely to
  * in most of our testing.
  */
-ssize_t qthread_write(int sockfd, const void *buf, size_t len)
-{
+ssize_t qthread_write(int sockfd, const void *buf, size_t len) {
+
     return 0;
 }
 
-/*
-int main() {
-
-	qthread_t t1, t2;
-	qthread_create(&t1, NULL, f1, NULL);
-	qthread_create(&t2, NULL, f2, NULL);
-
-	qthread_join(t1, NULL);
-	qthread_join(t2, NULL);
-
-	printf("starting");
-}
-*/
+//int main(){return 1;}

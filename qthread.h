@@ -25,6 +25,7 @@ struct qthread;
 struct qthread_mutex;
 struct qthread_cond;
 
+struct qthreadList;
 
 /* You are free to change these type definitions, but the ones
  * provided can work fairly well.
@@ -70,9 +71,6 @@ struct sockaddr;
 int     qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 ssize_t qthread_write(int fd, const void *buf, size_t len);
 
-
-
-
 struct qthread {
     /*
      * note - you can't use 'qthread_t*' in this definition, due to C
@@ -90,16 +88,25 @@ struct qthread {
         short status;
         double wakeupTime;
         void* exitStatus;
-
+	short condVarStatus;
 };
 
 
 struct qthread_mutex {
-
         short state;
-        qthread_t current;
-        qthread_t waitingList;
 };
 
+
+/* Condition variable
+ */
+struct qthread_cond {
+    struct qthreadList *waitingList;
+};
+
+
+struct qthreadList {
+	qthread_t thread;
+        struct qthreadList *next;
+};
 
 #endif /* __QTHREAD_H__ */

@@ -82,6 +82,26 @@ void test2(void)
     printf("test 2 done\n");
 }
 
+int N = 10;
+qthread_cond_t t1;
+
+
+void *f4(void *v) {
+
+	printf("count: %d\n", t1rdy);
+
+	qthread_mutex_lock(&m);
+	t1rdy++;
+	qthread_cond_wait(&t1, &m);
+	qthread_cond_signal(&t1);
+	t1rdy--;
+	qthread_mutex_unlock(&m);
+
+	printf("Count: %d\n", t1rdy);
+
+}
+
+
 int main(int argc, char **argv)
 {
     /* Here are some suggested tests to implement. You can either run
@@ -104,6 +124,23 @@ int main(int argc, char **argv)
      * call qthread_signal, qthread_yield until count indicates a
      *   thread has left. repeat.
      */
+
+     t1rdy = 0;
+     qthread_cond_init(&t1, NULL);
+
+    qthread_t t[10];
+    int i, j;
+    for (i = 0; i < 10; i++){
+        qthread_create(&t[i], NULL, f4, NULL);
+    }
+    for (i = 0; i < 10; i++) {
+        qthread_join(t[i], NULL);
+    }
+     qthread_cond_destroy(&t1);
+
+     printf("Final Count: %d\n", t1rdy);
+
+     printf("Test 3 OK\n");
 
     /* 4. read/write
      * create a pipe ('int fd[2]; pipe(fd);')
