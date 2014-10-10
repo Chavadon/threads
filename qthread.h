@@ -88,7 +88,7 @@ struct qthread {
         short status;
         double wakeupTime;
         void* exitStatus;
-	short condVarStatus;
+	short condVarWaitStatus;
 };
 
 
@@ -100,7 +100,9 @@ struct qthread_mutex {
 /* Condition variable
  */
 struct qthread_cond {
+
     struct qthreadList *waitingList;
+
 };
 
 

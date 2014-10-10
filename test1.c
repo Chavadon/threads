@@ -83,22 +83,27 @@ void test2(void)
 }
 
 int N = 10;
+int var = 0;
 qthread_cond_t t1;
 
 
 void *f4(void *v) {
 
-	printf("count: %d\n", t1rdy);
 
 	qthread_mutex_lock(&m);
 	t1rdy++;
-	qthread_cond_wait(&t1, &m);
+
+	printf("count: %d\n", t1rdy);
+	if(t1rdy == N)
+		var = 1;
+
+	while(!var) 
+		qthread_cond_wait(&t1, &m);
+
 	qthread_cond_signal(&t1);
+	printf("count: %d\n", t1rdy);
 	t1rdy--;
 	qthread_mutex_unlock(&m);
-
-	printf("Count: %d\n", t1rdy);
-
 }
 
 

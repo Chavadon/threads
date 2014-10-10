@@ -310,9 +310,7 @@ void initThreadLib() {
 
 /* qthread_create - create a new thread and add it to the active list
  */
-int qthread_create(qthread_t *thread, qthread_attr_t *attr,
-                   qthread_func_ptr_t start, void *arg)
-{
+int qthread_create(qthread_t *thread, qthread_attr_t *attr, qthread_func_ptr_t start, void *arg) {
     if(activeThreadList == NULL) {
 	initThreadLib();
     }
@@ -340,14 +338,12 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr,
 /* 'attr' - mutexes are non-recursive, non-debugging, and
  * non-any-other-POSIX-feature. 
  */
-int qthread_mutex_init(qthread_mutex_t *mutex, qthread_mutexattr_t *attr)
-{
+int qthread_mutex_init(qthread_mutex_t *mutex, qthread_mutexattr_t *attr) {
     mutex->state = 0;
     return 0;
 }
 
-int qthread_mutex_destroy(qthread_mutex_t *mutex)
-{
+int qthread_mutex_destroy(qthread_mutex_t *mutex) {
     if(mutex != NULL) {
     	mutex->state = 0;
     	free(mutex);
@@ -358,8 +354,7 @@ int qthread_mutex_destroy(qthread_mutex_t *mutex)
 
 /* qthread_mutex_lock/unlock
  */
-int qthread_mutex_lock(qthread_mutex_t *mutex)
-{
+int qthread_mutex_lock(qthread_mutex_t *mutex) {
     while(mutex->state) {
 	qthread_usleep(1);
     }
@@ -369,8 +364,7 @@ int qthread_mutex_lock(qthread_mutex_t *mutex)
 }
 
 
-int qthread_mutex_unlock(qthread_mutex_t *mutex)
-{
+int qthread_mutex_unlock(qthread_mutex_t *mutex) {
     mutex->state = 0;
     return 0;
 }
@@ -378,43 +372,57 @@ int qthread_mutex_unlock(qthread_mutex_t *mutex)
 /* qthread_cond_init/destroy - initialize a condition variable. Again
  * we ignore 'attr'.
  */
-int qthread_cond_init(qthread_cond_t *cond, qthread_condattr_t *attr)
-{
+int qthread_cond_init(qthread_cond_t *cond, qthread_condattr_t *attr) {
     cond->waitingList = NULL;
     return 0;
 }
 
-int qthread_cond_destroy(qthread_cond_t *cond)
-{
+int qthread_cond_destroy(qthread_cond_t *cond) {
     if(cond != NULL) {
-
 	qthread_cond_broadcast(cond);
     }
 
     return 0;
+}
 
+int isThreadInWaitingList(qthread_cond_t *cond, long toBeSearched) {
+
+	struct qthreadList *iterator = cond->waitingList;
+
+	while(iterator != NULL) {
+
+		if(iterator->thread->tid == toBeSearched)
+			return 1;
+		iterator = iterator->next;
+	}
+
+	return 0;
 }
 
 /* qthread_cond_wait - unlock the mutex and wait on 'cond' until
  * signalled; lock the mutex again before returning.
  */
-int qthread_cond_wait(qthread_cond_t *cond, qthread_mutex_t *mutex)
-{
+int qthread_cond_wait(qthread_cond_t *cond, qthread_mutex_t *mutex) {
     qthread_mutex_unlock(mutex);
-    current->condVarStatus = 1;
-    struct qthreadList *node = (struct qthreadList*)malloc(sizeof(struct qthreadList));
-    node->thread = current;
+	
+    if(!isThreadInWaitingList(cond, current->tid)) {
 
-    if(cond->waitingList == NULL) {
+	struct qthreadList *node = (struct qthreadList*)malloc(sizeof(struct qthreadList));
+	node->thread = current;
 
-	node->next = NULL;
+	if(cond->waitingList == NULL) {
 
-    } else {
+		node->next = NULL;
 
-	node->next = cond->waitingList;
+    	} else {
+
+		node->next = cond->waitingList;
+    	}
+
+	cond->waitingList = node;
+
     }
-
-    cond->waitingList = node;
+	
     qthread_usleep(1);
     qthread_mutex_lock(mutex);
 
@@ -424,43 +432,43 @@ int qthread_cond_wait(qthread_cond_t *cond, qthread_mutex_t *mutex)
 /* qthread_cond_signal/broadcast - wake one/all threads waiting on a
  * condition variable. Not an error if no threads are waiting.
  */
-int qthread_cond_signal(qthread_cond_t *cond)
-{
+int qthread_cond_signal(qthread_cond_t *cond) {
+
     if(cond->waitingList != NULL) {
 
 	struct qthreadList *toBeFreed = NULL;
-        struct qthreadList *prev = NULL;	
 
 	if(cond->waitingList->thread->tid == current->tid) {
 
 		toBeFreed = cond->waitingList;
 		cond->waitingList = cond->waitingList->next;
-
 	} else {
 
 		struct qthreadList *iterator = cond->waitingList->next;
 		struct qthreadList *prev = cond->waitingList;
-		while(iterator->next != NULL) {
+
+		while(iterator != NULL) {
 
 			if(iterator->thread->tid == current->tid) {
+				
+				toBeFreed = iterator;
 				prev->next = iterator->next;
-				free(iterator);
+				toBeFreed->next = NULL;
 				break;
 			}
-			else {
-				prev = iterator;
-				iterator = iterator->next;
-			}	
-		}
+			
+			prev = iterator;
+			iterator = iterator->next;
+		}		
 	}
-	
+
+	free(toBeFreed);
     }
     
     return 0;
 }
 
-int qthread_cond_broadcast(qthread_cond_t *cond)
-{
+int qthread_cond_broadcast(qthread_cond_t *cond) {
 
     if(cond->waitingList != NULL) {
 
