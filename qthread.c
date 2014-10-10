@@ -536,7 +536,12 @@ int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
  */
 ssize_t qthread_write(int sockfd, const void *buf, size_t len) {
 
-    return 0;
+    nt tmp = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
+
+    ssize_t buf_len  = write(sockfd, &buf, len);
+ 
+    return buf_len;
 }
 
 //int main(){return 1;}
