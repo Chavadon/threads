@@ -515,7 +515,9 @@ ssize_t qthread_read(int sockfd, void *buf, size_t len) {
     int tmp = fcntl(sockfd, F_GETFL, 0);
     fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
 
-    return 0;
+    ssize_t buf_len  = read(sockfd, &buf, len);
+ 
+    return buf_len;
 }
 
 /* like read - make sure the descriptor is in non-blocking mode, check
