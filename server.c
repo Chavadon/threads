@@ -18,7 +18,7 @@
 #include <sys/socket.h>     /* for socket system calls   */
 #include <arpa/inet.h>      /* for socket system calls (bind)  */
 #include <sched.h>   
-#include <qthread.h>        /* P-thread implementation        */    
+#include "qthread.h"        /* P-thread implementation        */    
 #include <signal.h>         /* for signal                     */ 
 #include <semaphore.h>      /* for p-thread semaphores        */
 /* ------------------------------------------------------------------------ */ 
