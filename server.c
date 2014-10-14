@@ -149,19 +149,20 @@ int main(int argc, char **argv)
  
     /* the web server main loop ============================================= */
     qthread_attr_init(&attr);
+    printf("server ready ...\n");  
+    printf("waiting new client ...\n");  
     while(TRUE) {
-        printf("server ready ...\n");  
  
         /* wait for the next client to arrive -------------- */
         addr_len = sizeof(client_addr);
         client_s = qthread_accept(server_s, (struct sockaddr *)&client_addr,
                                   &addr_len);
  
-        printf("new client ...\n");  
+        
  
         if (client_s == FALSE) {
             perror("socket");
-            exit(1);
+            //exit(1);
         }
         else {
             /* Create a child thread --------------------------------------- */
