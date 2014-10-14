@@ -120,7 +120,7 @@ void *f6(void *v) {
 	int rnm = rand()%10 ;
 	char buf[100];
 	
-	printf("Random: %d: \n", rnm);
+	//printf("Random: %d: \n", rnm);
 
 	if (rnm != 7){
 		sprintf(buf, "%d", -1);
