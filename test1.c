@@ -124,12 +124,12 @@ void *f6(void *v) {
 
 	if (rnm != 7){
 		sprintf(buf, "%d", -1);
-		printf("String: %s: \n", buf);
+		//printf("String: %s: \n", buf);
 		qthread_write(write_fd,(void*)buf,100);
 	}
 	else{
 		sprintf(buf,"%d", rnm);
-		printf("String: %s: \n", buf);
+		//printf("String: %s: \n", buf);
 		qthread_write(write_fd,(void*)buf,100);
 	}
 
@@ -139,6 +139,8 @@ void *f6(void *v) {
 
 int main(int argc, char **argv)
 {
+
+
     /* Here are some suggested tests to implement. You can either run
      * them one after another in the program (cleaning up threads
      * after each test) or pass a command-line argument indicating
@@ -147,8 +149,8 @@ int main(int argc, char **argv)
      * but it's a good start.
      */
 
-    test1();
-    test2();
+ //   test1();
+ //   test2();
     
     /* 3. condvar and sleep.
      * initialize a condvar and a mutex
@@ -160,6 +162,7 @@ int main(int argc, char **argv)
      *   thread has left. repeat.
      */
 
+/*
      t1rdy = 0;
      qthread_cond_init(&t1, NULL);
 
@@ -177,12 +180,15 @@ int main(int argc, char **argv)
 
      printf("Test 3 OK\n");
 
+*/
+
     /* 4. read/write
      * create a pipe ('int fd[2]; pipe(fd);')
      * create 2 threads:
      * one sleeps and then writes to the pipe
      * one reads from the pipe. [this tests blocking read]
      */
+
 
     int fd[2];
     pipe(fd);
