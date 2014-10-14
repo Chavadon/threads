@@ -515,8 +515,15 @@ ssize_t qthread_read(int sockfd, void *buf, size_t len) {
     int tmp = fcntl(sockfd, F_GETFL, 0);
     fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
 
-    ssize_t buf_len  = read(sockfd, &buf, len);
- 
+    ssize_t buf_len;
+
+    buf_len  = read(sockfd, (char*)buf, len);
+
+    if(atoi((char*)buf) == -1)
+	qthread_usleep(1);
+    else
+    	puts((char*)buf);
+	 
     return buf_len;
 }
 
@@ -539,8 +546,9 @@ ssize_t qthread_write(int sockfd, const void *buf, size_t len) {
     int tmp = fcntl(sockfd, F_GETFL, 0);
     fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
 
-    ssize_t buf_len  = write(sockfd, &buf, len);
- 
+    ssize_t buf_len  = write(sockfd, (char*)buf, len);
+    //qthread_usleep(1); 
+
     return buf_len;
 }
 

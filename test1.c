@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
-
+#include <string.h>
 #include "qthread.h"
 
 typedef struct qthread_mutex qthread_mutex_t;
@@ -106,6 +106,36 @@ void *f4(void *v) {
 	qthread_mutex_unlock(&m);
 }
 
+void *f5(void *v) {
+	char a[100];
+	int read_fd = *(int*)v;
+	qthread_read(read_fd,(void*)a,100);
+
+}
+
+void *f6(void *v) {
+
+	int write_fd = *(int*)v;
+	//srand (10);
+	int rnm = rand()%10 ;
+	char buf[100];
+	
+	printf("Random: %d: \n", rnm);
+
+	if (rnm != 7){
+		sprintf(buf, "%d", -1);
+		printf("String: %s: \n", buf);
+		qthread_write(write_fd,(void*)buf,100);
+	}
+	else{
+		sprintf(buf,"%d", rnm);
+		printf("String: %s: \n", buf);
+		qthread_write(write_fd,(void*)buf,100);
+	}
+
+
+
+}
 
 int main(int argc, char **argv)
 {
@@ -153,4 +183,18 @@ int main(int argc, char **argv)
      * one sleeps and then writes to the pipe
      * one reads from the pipe. [this tests blocking read]
      */
+
+    int fd[2];
+    pipe(fd);
+         
+    qthread_t f[2];
+
+    qthread_create(&f[0], NULL, f5,(void*)&fd[0]);
+    qthread_create(&f[1], NULL, f6, (void*)&fd[1]);
+
+    qthread_join(f[0], NULL);
+    qthread_join(f[1], NULL);
+
+    close(fd[0]);
+    close(fd[1]);
 }
