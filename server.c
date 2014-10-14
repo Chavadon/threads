@@ -161,7 +161,7 @@ int main(int argc, char **argv)
         
  
         if (client_s == FALSE) {
-            perror("socket");
+            //perror("socket");
             //exit(1);
         }
         else {
