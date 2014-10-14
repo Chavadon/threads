@@ -537,7 +537,7 @@ int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
     int tmp = fcntl(sockfd, F_GETFL, 0);
     fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
 
-    int new_fd = accept(sockfd, (struct sockaddr *)&addr, &addrlen);
+    int new_fd = accept(sockfd, addr, addrlen);
 
     return 0;
 }
