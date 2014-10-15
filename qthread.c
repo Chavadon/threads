@@ -551,9 +551,9 @@ ssize_t qthread_write(int sockfd, const void *buf, size_t len) {
     int tmp = fcntl(sockfd, F_GETFL, 0);
     fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
 
-    ssize_t buf_len  = write(sockfd, (char*)buf, len);
+    //ssize_t buf_len  = write(sockfd, (char*)buf, len);
     //qthread_usleep(1); 
-
+    ssize_t bytes_sent = send(sockfd, buf, len, 0);
     return buf_len;
 }
 

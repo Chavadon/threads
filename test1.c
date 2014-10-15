@@ -189,7 +189,7 @@ int main(int argc, char **argv)
      * one reads from the pipe. [this tests blocking read]
      */
 
-
+/*
     int fd[2];
     pipe(fd);
          
@@ -203,4 +203,13 @@ int main(int argc, char **argv)
 
     close(fd[0]);
     close(fd[1]);
+*/
+
+    char *msg = "Ahmad was here!";
+    int len, bytes_sent;
+    len = strlen(msg);
+    printf("length of msg: %d\n", len);
+    bytes_sent = send(sockfd, msg, len, 0);
+    printf("bytes sent: %d\n", bytes_sent);
+
 }
