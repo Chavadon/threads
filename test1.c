@@ -231,4 +231,15 @@ int main(int argc, char **argv)
     qthread_write(1, msg, len);
     printf("bytes sent: %d\n", bytes_sent);
 
+    char buf[100];
+
+    int numbytes;
+    if ((numbytes = recv(client_s, buf, 100-1, 0)) == -1) {
+        perror("recv");
+        exit(1);
+    }
+
+    buf[numbytes] = '\0';
+
+    printf("client: received '%s'\n",buf);
 }
