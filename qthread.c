@@ -554,7 +554,7 @@ ssize_t qthread_write(int sockfd, const void *buf, size_t len) {
     //ssize_t buf_len  = write(sockfd, (char*)buf, len);
     //qthread_usleep(1); 
     ssize_t bytes_sent = send(sockfd, buf, len, 0);
-    return buf_len;
+    return bytes_sent;
 }
 
 //int main(){return 1;}
