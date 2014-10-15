@@ -10,6 +10,8 @@
 #include <assert.h>
 #include <string.h>
 #include "qthread.h"
+#include <sys/types.h>
+#include <sys/socket.h>
 
 typedef struct qthread_mutex qthread_mutex_t;
 
@@ -204,8 +206,22 @@ int main(int argc, char **argv)
     close(fd[0]);
     close(fd[1]);
 */
+    unsigned int          server_s;               // Server socket descriptor
+    struct sockaddr_in    server_addr;            // Server Internet address
+    struct sockaddr_in    client_addr;            // Client Internet address
+    struct in_addr        client_ip_addr;         // Client IP address
+    int                   addr_len;               // Internet address length
+    unsigned int    client_s;       /* Client socket descriptor */
 
-    char *msg = "Ahmad was here!";
+    client_s = socket(AF_INET, SOCK_STREAM, 0);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(8080);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    addr_len = sizeof(server_addr);
+    connect(client_s,(struct sockaddr *)&server_addr, &addr_len)
+
+    char *msg = "README.md";
     int len, bytes_sent;
     len = strlen(msg);
     printf("length of msg: %d\n", len);
