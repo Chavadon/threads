@@ -10,8 +10,10 @@
 #include <assert.h>
 #include <string.h>
 #include "qthread.h"
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <sys/types.h>      
+#include <netinet/in.h>     
+#include <sys/socket.h>     /* for socket system calls   */
+#include <arpa/inet.h>      /* for socket system calls (bind)  */
 
 typedef struct qthread_mutex qthread_mutex_t;
 
