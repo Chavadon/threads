@@ -221,7 +221,7 @@ int main(int argc, char **argv)
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     addr_len = sizeof(server_addr);
-    connect(client_s,(struct sockaddr *)&server_addr, &addr_len);
+    connect(client_s,(struct sockaddr *)&server_addr, addr_len);
 
     char *msg = "README.md";
     int len, bytes_sent;
