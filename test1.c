@@ -214,11 +214,13 @@ int main(int argc, char **argv)
     struct in_addr        client_ip_addr;         // Client IP address
     int                   addr_len;               // Internet address length
     unsigned int    client_s;       /* Client socket descriptor */
+    struct hostent *he;
 
     client_s = socket(AF_INET, SOCK_STREAM, 0);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(8080);
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_info.sin_addr = *((struct in_addr *)he->h_addr);
+    //server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     addr_len = sizeof(server_addr);
     connect(client_s,(struct sockaddr *)&server_addr, addr_len);

@@ -67,6 +67,7 @@ void *my_thread(void * arg)
     /* receive the first HTTP request (HTTP GET) ------- */
     do {
         retcode = recv(myClient_s, in_buf, BUF_SIZE, 0);
+        printf("bytes received: %d\n", retcode);
     } while (retcode == 0);
  
     /* if receive error --- */
@@ -159,12 +160,14 @@ int main(int argc, char **argv)
                                   &addr_len);
  
         
- 
+        
         if (client_s == FALSE) {
             //perror("socket");
             //exit(1);
+            continue;
         }
         else {
+            printf("Server got connection from client %s\n", inet_ntoa(client_addr.sin_addr));
             /* Create a child thread --------------------------------------- */
             ids = client_s;
             qthread_create (    /* Create a child thread */
