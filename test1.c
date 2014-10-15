@@ -210,7 +210,7 @@ int main(int argc, char **argv)
     len = strlen(msg);
     printf("length of msg: %d\n", len);
     //bytes_sent = send(sockfd, msg, len, 0);
-    qthread_write(1, msg, len)
+    qthread_write(1, msg, len);
     printf("bytes sent: %d\n", bytes_sent);
 
 }
