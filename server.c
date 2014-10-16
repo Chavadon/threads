@@ -83,7 +83,7 @@ void *my_thread(void * arg)
         
         file_name = strtok_r(NULL, " ", &p);
         //file_name = "README.md";
-        printf("fname: %s \n", file_name);
+        printf("fname: %s \n", file_name[1]);
         /* Open the requested file (start at 2nd char to get rid */
         /* of leading "\") */
         //fh = open(&file_name[1], O_RDONLY, S_IREAD | S_IWRITE);
