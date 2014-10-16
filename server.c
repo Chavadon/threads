@@ -69,6 +69,7 @@ void *my_thread(void * arg)
         printf("waiting for client input\n");
         retcode = recv(myClient_s, in_buf, BUF_SIZE, 0);
         printf("bytes received: %d\n", retcode);
+        printf("msg received: %s: \n", in_buf);
     } while (retcode == 0);
  
     /* if receive error --- */
