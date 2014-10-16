@@ -69,7 +69,7 @@ void *my_thread(void * arg)
         printf("waiting for client input\n");
         retcode = recv(myClient_s, in_buf, BUF_SIZE, 0);
         printf("bytes received: %d\n", retcode);
-        printf("msg received: %s: \n", in_buf);
+        printf("msg received: %s \n", in_buf);
     } while (retcode == 0);
  
     /* if receive error --- */
@@ -81,9 +81,9 @@ void *my_thread(void * arg)
         /* Parse out the filename from the GET request --- */
         strtok_r(in_buf, " ", &p);
         
-        //file_name = strtok_r(NULL, " ", &p);
-        file_name = "README.md";
-        printf("fname: %s: \n", file_name);
+        file_name = strtok_r(NULL, " ", &p);
+        //file_name = "README.md";
+        printf("fname: %s \n", file_name);
         /* Open the requested file (start at 2nd char to get rid */
         /* of leading "\") */
         //fh = open(&file_name[1], O_RDONLY, S_IREAD | S_IWRITE);
