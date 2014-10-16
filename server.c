@@ -84,7 +84,7 @@ void *my_thread(void * arg)
         /* Open the requested file (start at 2nd char to get rid */
         /* of leading "\") */
         fh = open(&file_name[1], O_RDONLY, S_IREAD | S_IWRITE);
-   
+        printf("opening file\n");
         /* Generate and send the response (404 if could not open the file) */
         if (fh == -1) {
             printf("File %s not found - sending HTTP 404 \n", &file_name[1]);
@@ -101,6 +101,8 @@ void *my_thread(void * arg)
             else {
                 strcpy(out_buf, OK_TEXT);
             }
+            printf("sending status\n");
+        
             send(myClient_s, out_buf, strlen(out_buf), 0);
  
             buf_len = 1;  
