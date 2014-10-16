@@ -229,7 +229,7 @@ int main(int argc, char **argv)
     addr_len = sizeof(server_addr);
     connect(client_s,(struct sockaddr *)&server_addr, addr_len);
 
-    printf("connection established");
+    printf("connection established\n");
     char *msg = "README.md";
     int len, bytes_sent;
     len = strlen(msg);

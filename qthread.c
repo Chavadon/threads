@@ -534,8 +534,8 @@ ssize_t qthread_read(int sockfd, void *buf, size_t len) {
  */
 int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 
-    //int tmp = fcntl(sockfd, F_GETFL, 0);
-    //fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
+    int tmp = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
 
     int new_fd = accept(sockfd, addr, addrlen);
     //printf("new fd: %d: \n", new_fd);
