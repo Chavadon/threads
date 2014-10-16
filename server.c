@@ -163,6 +163,7 @@ int main(int argc, char **argv)
         
         
         if (client_s == FALSE) {
+            printf("still false");
             perror("socket");
             //exit(1);
             sleep(1);

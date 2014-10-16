@@ -539,7 +539,7 @@ int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 
     int new_fd = accept(sockfd, addr, addrlen);
     //printf("new fd: %d: \n", new_fd);
-    return 0;
+    return new_fd;
 }
 
 /* Like read, again. Note that this is an output, rather than an input
