@@ -80,7 +80,7 @@ void *my_thread(void * arg)
         /* Parse out the filename from the GET request --- */
         strtok_r(in_buf, " ", &p);
         file_name = strtok_r(NULL, " ", &p);
-        puts(filename[1]);
+        puts(file_name[1]);
         /* Open the requested file (start at 2nd char to get rid */
         /* of leading "\") */
         fh = open(&file_name[1], O_RDONLY, S_IREAD | S_IWRITE);
