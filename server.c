@@ -79,16 +79,21 @@ void *my_thread(void * arg)
     else {    
         /* Parse out the filename from the GET request --- */
         strtok_r(in_buf, " ", &p);
-        file_name = strtok_r(NULL, " ", &p);
-        printf("fname: %s: \n", &file_name[0]);
-        puts(&file_name[0]);
+        
+        //file_name = strtok_r(NULL, " ", &p);
+        file_name = "README.md"
+        printf("fname: %s: \n", &file_name);
+        puts(&file_name);
         /* Open the requested file (start at 2nd char to get rid */
         /* of leading "\") */
-        fh = open(&file_name[1], O_RDONLY, S_IREAD | S_IWRITE);
+        //fh = open(&file_name[1], O_RDONLY, S_IREAD | S_IWRITE);
+        fh = open(&file_name, O_RDONLY, S_IREAD | S_IWRITE);
+        
         printf("opening file\n");
         /* Generate and send the response (404 if could not open the file) */
         if (fh == -1) {
-            printf("File %s not found - sending HTTP 404 \n", &file_name[1]);
+            //printf("File %s not found - sending HTTP 404 \n", &file_name[1]);
+            printf("File %s not found - sending HTTP 404 \n", &file_name);
             strcpy(out_buf, NOTOK_404);
             send(myClient_s, out_buf, strlen(out_buf), 0);
             strcpy(out_buf, MESS_404);
