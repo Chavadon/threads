@@ -230,7 +230,7 @@ int main(int argc, char **argv)
     connect(client_s,(struct sockaddr *)&server_addr, addr_len);
 
     printf("connection established\n");
-    char *msg = "wget http://192.168.56.101:8080/README.md";
+    char *msg = "GET /README.md";
     int len, bytes_sent;
     len = strlen(msg);
     printf("length of msg: %d\n", len);
