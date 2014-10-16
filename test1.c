@@ -229,12 +229,14 @@ int main(int argc, char **argv)
     addr_len = sizeof(server_addr);
     connect(client_s,(struct sockaddr *)&server_addr, addr_len);
 
+    printf("connection established");
     char *msg = "README.md";
     int len, bytes_sent;
     len = strlen(msg);
     printf("length of msg: %d\n", len);
     //bytes_sent = send(sockfd, msg, len, 0);
-    qthread_write(1, msg, len);
+    //send(sockfd, buf, len, 0);
+    bytes_sent = qthread_write(client_s, msg, len);
     printf("bytes sent: %d\n", bytes_sent);
 
     char buf[100];

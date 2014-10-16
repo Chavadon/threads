@@ -66,6 +66,7 @@ void *my_thread(void * arg)
  
     /* receive the first HTTP request (HTTP GET) ------- */
     do {
+        printf("waiting for client input");
         retcode = recv(myClient_s, in_buf, BUF_SIZE, 0);
         printf("bytes received: %d\n", retcode);
     } while (retcode == 0);
