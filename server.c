@@ -145,6 +145,7 @@ int main(int argc, char **argv)
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     bind(server_s, (struct sockaddr *)&server_addr, sizeof(server_addr));
  
+    printf("Server at %s\n", inet_ntoa(server_addr.sin_addr));
     /* Listen for connections and then accept ------------------------------- */
     listen(server_s, PEND_CONNECTIONS);
  

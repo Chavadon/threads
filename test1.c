@@ -217,13 +217,16 @@ int main(int argc, char **argv)
     struct hostent *he;
 
     client_s = socket(AF_INET, SOCK_STREAM, 0);
+
+    memset(&server_addr, '0', sizeof(server_addr));
+    
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(8080);
     //server_addr.sin_addr = *((struct in_addr *)he->h_addr);
     //server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    memset(&server_addr, '0', sizeof(server_addr));
-    
+    inet_pton(AF_INET,INADDR_ANY,&server_addr.sin.addr);
+
     addr_len = sizeof(server_addr);
     connect(client_s,(struct sockaddr *)&server_addr, addr_len);
 
