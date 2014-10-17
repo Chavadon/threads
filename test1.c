@@ -193,7 +193,7 @@ int main(int argc, char **argv)
      * one reads from the pipe. [this tests blocking read]
      */
 
-/*
+
     int fd[2];
     pipe(fd);
          
@@ -207,13 +207,14 @@ int main(int argc, char **argv)
 
     close(fd[0]);
     close(fd[1]);
-*/
+
+    /*
     unsigned int          server_s;               // Server socket descriptor
     struct sockaddr_in    server_addr;            // Server Internet address
     struct sockaddr_in    client_addr;            // Client Internet address
     struct in_addr        client_ip_addr;         // Client IP address
     int                   addr_len;               // Internet address length
-    unsigned int    client_s;       /* Client socket descriptor */
+    unsigned int    client_s;       
     struct hostent *he;
 
     client_s = socket(AF_INET, SOCK_STREAM, 0);
@@ -250,4 +251,5 @@ int main(int argc, char **argv)
     buf[numbytes] = '\0';
 
     printf("client: received '%s'\n",buf);
+    */
 }
