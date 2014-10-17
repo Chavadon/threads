@@ -201,8 +201,9 @@ int main(int argc, char **argv)
          
     qthread_t f[2];
 
-    qthread_create(&f[0], NULL, f5,(void*)&fd[0]);
     qthread_create(&f[1], NULL, f6, (void*)&fd[1]);
+    qthread_create(&f[0], NULL, f5,(void*)&fd[0]);
+    //qthread_create(&f[1], NULL, f6, (void*)&fd[1]);
 
     qthread_join(f[0], NULL);
     qthread_join(f[1], NULL);
