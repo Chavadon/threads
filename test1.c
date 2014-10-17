@@ -208,7 +208,7 @@ int main(int argc, char **argv)
     close(fd[0]);
     close(fd[1]);
 
-    /*
+    
     unsigned int          server_s;               // Server socket descriptor
     struct sockaddr_in    server_addr;            // Server Internet address
     struct sockaddr_in    client_addr;            // Client Internet address
@@ -251,5 +251,5 @@ int main(int argc, char **argv)
     buf[numbytes] = '\0';
 
     printf("client: received '%s'\n",buf);
-    */
+    
 }
