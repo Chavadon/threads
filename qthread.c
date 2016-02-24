@@ -25,7 +25,6 @@ qthread_t tail = NULL;
  */
 extern void do_switch(void **location_for_old_sp, void *new_value);
 
-
 /*
  * setup_stack(stack, function, arg1, arg2) - sets up a stack so that
  * switching to it from 'do_switch' will call 'function' with arguments
@@ -37,9 +36,7 @@ extern void do_switch(void **location_for_old_sp, void *new_value);
  */
 void *setup_stack(int *stack, void *func, void *arg1, void *arg2)
 {
-
-
-    int old_bp = (int)stack;	/* top frame - SP = BP */
+    int old_bp = (int)stack;    /* top frame - SP = BP */
 
     *(--stack) = 0x3A3A3A3A;    /* guard zone */
     *(--stack) = 0x3A3A3A3A;
@@ -90,8 +87,8 @@ struct qthread os_thread = {};
 qthread_t current = &os_thread;
 
 
-void activeThreadListRotateLeft() {
-
+void activeThreadListRotateLeft() 
+{
         tail->next = activeThreadList;
         activeThreadList->prev = tail;
         activeThreadList = activeThreadList->next;
@@ -100,18 +97,23 @@ void activeThreadListRotateLeft() {
         tail->next = NULL;
 }
 
-
-void findNextRunnableThread(qthread_t *nextRunnable) {
-
-	do {
-		if( ( (activeThreadList->status == 1) || (activeThreadList->status == 3) ) && (activeThreadList->wakeupTime <= gettime()) && (activeThreadList->tid != current->tid) ) {
-		
-			*nextRunnable = activeThreadList;
-			activeThreadListRotateLeft();
-			break;
-		} else
-			activeThreadListRotateLeft();
-	}while(1);
+void findNextRunnableThread(qthread_t *nextRunnable) 
+{
+    do{
+        if(((activeThreadList->status == 1) || (activeThreadList->status == 3))
+            && (activeThreadList->wakeupTime <= gettime()) 
+            && (activeThreadList->tid != current->tid)) 
+        {
+        
+            *nextRunnable = activeThreadList;
+            activeThreadListRotateLeft();
+            break;
+        } 
+        else
+        {
+            activeThreadListRotateLeft();
+        }
+    }while(1);
 }
 
 /* Initialize a thread attribute structure. We're using an 'int' for
@@ -133,18 +135,16 @@ int qthread_attr_setdetachstate(qthread_attr_t *attr, int detachstate)
     return 0;
 }
 
-long getNextTID() {
-
-	long nextTID = 0;
-	qthread_t iterator = activeThreadList;
-
-	while(iterator != NULL) {
-
-		nextTID++;
-		iterator = iterator->next;
-	}
-	
-	return nextTID;
+long getNextTID() 
+{
+    long nextTID = 0;
+    qthread_t iterator = activeThreadList;
+    while(iterator != NULL) 
+    {
+        nextTID++;
+        iterator = iterator->next;
+    }
+    return nextTID;
 }
 
 /* Beware - you cannot use do_switch to switch from a thread to
@@ -153,22 +153,24 @@ long getNextTID() {
  * without switching. (why? because you haven't saved the current
  * stack pointer)
  */
-void *wrapper(qthread_func_ptr_t func, void *arg) {
-
+void *wrapper(qthread_func_ptr_t func, void *arg) 
+{
     qthread_exit(func(arg));
 }
 
 /* qthread_yield - yield to the next runnable thread.
  */
-int qthread_yield(void) {
+int qthread_yield(void) 
+{
     qthread_t nextRunnableThread = NULL, prev = NULL;
     findNextRunnableThread(&nextRunnableThread);
-
-    if(nextRunnableThread != NULL){
-
+    if(nextRunnableThread != NULL)
+    {
         prev = current;
-	if(prev->status != 4)
-		prev->status = 3;
+        if(prev->status != 4)
+        {
+            prev->status = 3;
+        }
         current = nextRunnableThread;
         current->status = 2;
         do_switch(&prev->offsetPtr, nextRunnableThread->offsetPtr);
@@ -176,84 +178,90 @@ int qthread_yield(void) {
     return 0;
 }
 
-void freeTCB(long toBeDeleted) {
+void freeTCB(long toBeDeleted) 
+{
+    qthread_t iterator = activeThreadList;
+    if(activeThreadList != NULL) 
+    {
+        while(iterator != NULL) 
+        {
+            if(iterator->tid == toBeDeleted) 
+            {
+                if(toBeDeleted == activeThreadList->tid) 
+                {
+                    iterator = activeThreadList;
+                    activeThreadList = activeThreadList->next;
+                    activeThreadList->prev = NULL;
+                    iterator->next = NULL;
+                } 
+                else if(toBeDeleted == tail->tid) 
+                {
+                    iterator = tail;
+                    tail = tail->prev;
+                    tail->next = NULL;
+                    iterator->prev = NULL;
 
-        qthread_t iterator = activeThreadList;
-
-        if(activeThreadList != NULL) {
-
-                while(iterator != NULL) {
-                        if(iterator->tid == toBeDeleted) {
-
-				if(toBeDeleted == activeThreadList->tid) {
-
-					iterator = activeThreadList;
-					activeThreadList = activeThreadList->next;
-					activeThreadList->prev = NULL;
-					iterator->next = NULL;
-
-				} else if(toBeDeleted == tail->tid) {
-
-					iterator = tail;
-					tail = tail->prev;
-					tail->next = NULL;
-					iterator->prev = NULL;
-
-				} else {
-
-					iterator->prev->next = iterator->next;
-        	                        iterator->next->prev = iterator->prev;
-					iterator->next = NULL;
-					iterator->prev = NULL;
-				}
-
-				free(iterator->basePtr);
-                        	free(iterator);
-                                break;
-                        } else
-                                iterator = iterator->next;
+                } 
+                else 
+                {
+                    iterator->prev->next = iterator->next;
+                    iterator->next->prev = iterator->prev;
+                    iterator->next = NULL;
+                    iterator->prev = NULL;
                 }
+                free(iterator->basePtr);
+                free(iterator);
+                break;
+            } 
+            else
+            {
+                iterator = iterator->next;
+            }
+        }
 
-		if((activeThreadList->next == NULL) && (activeThreadList->tid == 0)) {
+        if((activeThreadList->next == NULL) && (activeThreadList->tid == 0)) 
+        {
+            free(activeThreadList->basePtr);
+            activeThreadList = NULL;
+        }
 
-			free(activeThreadList->basePtr);
-			activeThreadList = NULL;
-		}
-
-        } else
-                fprintf(stderr, "List Empty!!! Cannot Free the given thread!!!");
+    } 
+    else
+    {
+        fprintf(stderr, "List Empty!!! Cannot Free the given thread!!!");
+    }
 }
 
-int qthread_join(qthread_t thread, void **retval){
+int qthread_join(qthread_t thread, void **retval)
+{
+    if(thread != NULL)
+    {
+        if(thread->status != 4)
+        {
+            qthread_yield();
+        }
 
-	if(thread != NULL){
-
-		if(thread->status != 4)
-			qthread_yield();
-
-		if(retval != NULL){
-
-			qthread_t iterator = activeThreadList;
-
-			while(iterator != NULL) {
-
-				if(iterator->tid == thread->tid) {
-			
-					*retval = iterator->exitStatus;
-					break;
-				}	
-
-				iterator = iterator->next;
-			}
-		}
-
-		thread->detached = 1;
-		freeTCB(thread->tid);
-
-	} else 
-		return -1;
-
-	return 0;
+        if(retval != NULL)
+        {
+            qthread_t iterator = activeThreadList;
+            while(iterator != NULL) 
+            {
+                if(iterator->tid == thread->tid) 
+                {
+                    *retval = iterator->exitStatus;
+                    break;
+                }    
+                iterator = iterator->next;
+            }
+        }
+        thread->detached = 1;
+        freeTCB(thread->tid);
+    } 
+    else 
+    {
+        return -1;
+    }
+    return 0;
 }
 
     
@@ -262,44 +270,46 @@ int qthread_join(qthread_t thread, void **retval){
  * future call to qthread_join; otherwise you can free allocated
  * memory. 
  */
-void qthread_exit(void *val) {
-
+void qthread_exit(void *val) 
+{
     if(!current->detached)
-	    current->exitStatus = val;
+    {
+        current->exitStatus = val;
+    }
     current->status = 4;
     qthread_yield();
 }
 
-void printActiveThreadList() {
-
-        if(activeThreadList != NULL){
-
-                qthread_t temp = activeThreadList;
-
-                while(temp != NULL) {
-                        printf("%ld\n", temp->tid);
-                        temp = temp->next;
-                }
-        }
+void printActiveThreadList() 
+{
+     if(activeThreadList != NULL)
+     {
+         qthread_t temp = activeThreadList;
+         while(temp != NULL) 
+         {
+             printf("%ld\n", temp->tid);
+             temp = temp->next;
+         }
+     }
 }
 
-void allocateThreadStack(void** basePtr, void** offsetPtr) {
-
+void allocateThreadStack(void** basePtr, void** offsetPtr) 
+{
         *basePtr = malloc(4096);
         *offsetPtr = *basePtr + 4096;
 }
 
-void initThreadLib() {
-
-	os_thread.tid = 0;
-	qthread_attr_init(&os_thread.detached);
-	os_thread.status = 2;
-	os_thread.prev = NULL;
-	os_thread.next = NULL;
-	os_thread.exitStatus = NULL;
-	allocateThreadStack(&os_thread.basePtr, &os_thread.offsetPtr);
-	os_thread.offsetPtr = setup_stack(os_thread.offsetPtr, NULL, NULL, NULL);
-	activeThreadList = tail = &os_thread;
+void initThreadLib() 
+{
+    os_thread.tid = 0;
+    qthread_attr_init(&os_thread.detached);
+    os_thread.status = 2;
+    os_thread.prev = NULL;
+    os_thread.next = NULL;
+    os_thread.exitStatus = NULL;
+    allocateThreadStack(&os_thread.basePtr, &os_thread.offsetPtr);
+    os_thread.offsetPtr = setup_stack(os_thread.offsetPtr, NULL, NULL, NULL);
+    activeThreadList = tail = &os_thread;
 }
 
 /* a thread can exit by either returning from its main function or
@@ -310,15 +320,15 @@ void initThreadLib() {
 
 /* qthread_create - create a new thread and add it to the active list
  */
-int qthread_create(qthread_t *thread, qthread_attr_t *attr, qthread_func_ptr_t start, void *arg) {
-    if(activeThreadList == NULL) {
-	initThreadLib();
+int qthread_create(qthread_t *thread, qthread_attr_t *attr, qthread_func_ptr_t start, void *arg) 
+{
+    if(activeThreadList == NULL) 
+    {
+        initThreadLib();
     }
 
     *thread = (qthread_t)malloc(sizeof(struct qthread));
-
     (*thread)->tid = getNextTID();
-
     (*thread)->prev = NULL;
     (*thread)->basePtr = malloc(4096);
     (*thread)->offsetPtr = (*thread)->basePtr + 4096;
@@ -331,40 +341,43 @@ int qthread_create(qthread_t *thread, qthread_attr_t *attr, qthread_func_ptr_t s
     activeThreadList->prev = *thread;
     activeThreadList = activeThreadList->prev;
     qthread_yield();
-
     return 0;
 }
 
 /* 'attr' - mutexes are non-recursive, non-debugging, and
  * non-any-other-POSIX-feature. 
  */
-int qthread_mutex_init(qthread_mutex_t *mutex, qthread_mutexattr_t *attr) {
+int qthread_mutex_init(qthread_mutex_t *mutex, qthread_mutexattr_t *attr) 
+{
     mutex->state = 0;
     return 0;
 }
 
-int qthread_mutex_destroy(qthread_mutex_t *mutex) {
-    if(mutex != NULL) {
-    	mutex->state = 0;
-    	free(mutex);
+int qthread_mutex_destroy(qthread_mutex_t *mutex) 
+{
+    if(mutex != NULL) 
+    {
+        mutex->state = 0;
+        free(mutex);
     }
-
     return 0;
 }
 
 /* qthread_mutex_lock/unlock
  */
-int qthread_mutex_lock(qthread_mutex_t *mutex) {
-    while(mutex->state) {
-	qthread_usleep(1);
+int qthread_mutex_lock(qthread_mutex_t *mutex) 
+{
+    while(mutex->state) 
+    {
+        qthread_usleep(1);
     }
-
     mutex->state = 1;
     return 0;
 }
 
 
-int qthread_mutex_unlock(qthread_mutex_t *mutex) {
+int qthread_mutex_unlock(qthread_mutex_t *mutex) 
+{
     mutex->state = 0;
     return 0;
 }
@@ -372,112 +385,106 @@ int qthread_mutex_unlock(qthread_mutex_t *mutex) {
 /* qthread_cond_init/destroy - initialize a condition variable. Again
  * we ignore 'attr'.
  */
-int qthread_cond_init(qthread_cond_t *cond, qthread_condattr_t *attr) {
+int qthread_cond_init(qthread_cond_t *cond, qthread_condattr_t *attr) 
+{
     cond->waitingList = NULL;
     return 0;
 }
 
-int qthread_cond_destroy(qthread_cond_t *cond) {
-    if(cond != NULL) {
-	qthread_cond_broadcast(cond);
+int qthread_cond_destroy(qthread_cond_t *cond) 
+{
+    if(cond != NULL) 
+    {
+        qthread_cond_broadcast(cond);
     }
-
     return 0;
 }
 
-int isThreadInWaitingList(qthread_cond_t *cond, long toBeSearched) {
-
-	struct qthreadList *iterator = cond->waitingList;
-
-	while(iterator != NULL) {
-
-		if(iterator->thread->tid == toBeSearched)
-			return 1;
-		iterator = iterator->next;
-	}
-
-	return 0;
+int isThreadInWaitingList(qthread_cond_t *cond, long toBeSearched) 
+{
+    struct qthreadList *iterator = cond->waitingList;
+    while(iterator != NULL) 
+    {
+        if(iterator->thread->tid == toBeSearched)
+        {
+            return 1;
+        }
+        iterator = iterator->next;
+    }
+    return 0;
 }
 
 /* qthread_cond_wait - unlock the mutex and wait on 'cond' until
  * signalled; lock the mutex again before returning.
  */
-int qthread_cond_wait(qthread_cond_t *cond, qthread_mutex_t *mutex) {
-    qthread_mutex_unlock(mutex);
-	
-    if(!isThreadInWaitingList(cond, current->tid)) {
+int qthread_cond_wait(qthread_cond_t *cond, qthread_mutex_t *mutex) 
+{
+    qthread_mutex_unlock(mutex);    
+    if(!isThreadInWaitingList(cond, current->tid)) 
+    {
+        struct qthreadList *node = (struct qthreadList*)malloc(sizeof(struct qthreadList));
+        node->thread = current;
 
-	struct qthreadList *node = (struct qthreadList*)malloc(sizeof(struct qthreadList));
-	node->thread = current;
+        if(cond->waitingList == NULL) 
+        { 
+            node->next = NULL;
+        } 
+        else 
+        {
+            node->next = cond->waitingList;
+        }
 
-	if(cond->waitingList == NULL) {
-
-		node->next = NULL;
-
-    	} else {
-
-		node->next = cond->waitingList;
-    	}
-
-	cond->waitingList = node;
-
+        cond->waitingList = node;
     }
-	
     qthread_usleep(1);
     qthread_mutex_lock(mutex);
-
     return 0;
 }
 
 /* qthread_cond_signal/broadcast - wake one/all threads waiting on a
  * condition variable. Not an error if no threads are waiting.
  */
-int qthread_cond_signal(qthread_cond_t *cond) {
-
-    if(cond->waitingList != NULL) {
-
-	struct qthreadList *toBeFreed = NULL;
-
-	if(cond->waitingList->thread->tid == current->tid) {
-
-		toBeFreed = cond->waitingList;
-		cond->waitingList = cond->waitingList->next;
-	} else {
-
-		struct qthreadList *iterator = cond->waitingList->next;
-		struct qthreadList *prev = cond->waitingList;
-
-		while(iterator != NULL) {
-
-			if(iterator->thread->tid == current->tid) {
-				
-				toBeFreed = iterator;
-				prev->next = iterator->next;
-				toBeFreed->next = NULL;
-				break;
-			}
-			
-			prev = iterator;
-			iterator = iterator->next;
-		}		
-	}
-
-	free(toBeFreed);
+int qthread_cond_signal(qthread_cond_t *cond) 
+{
+    if(cond->waitingList != NULL) 
+    {
+        struct qthreadList *toBeFreed = NULL;
+        if(cond->waitingList->thread->tid == current->tid) 
+        {
+            toBeFreed = cond->waitingList;
+            cond->waitingList = cond->waitingList->next;
+        } 
+        else 
+        {
+            struct qthreadList *iterator = cond->waitingList->next;
+            struct qthreadList *prev = cond->waitingList;
+            while(iterator != NULL) 
+            {
+                if(iterator->thread->tid == current->tid) 
+                {
+                    toBeFreed = iterator;
+                    prev->next = iterator->next;
+                    toBeFreed->next = NULL;
+                    break;
+                }            
+                prev = iterator;
+                iterator = iterator->next;
+            }           
+        }
+        free(toBeFreed);
     }
-    
     return 0;
 }
 
-int qthread_cond_broadcast(qthread_cond_t *cond) {
-
-    if(cond->waitingList != NULL) {
-
-	while(cond->waitingList != NULL) {
-
-	    qthread_cond_signal(cond);
-	}
+int qthread_cond_broadcast(qthread_cond_t *cond) 
+{
+    if(cond->waitingList != NULL) 
+    {
+        while(cond->waitingList != NULL) 
+        {
+            qthread_cond_signal(cond);
+        }
     }
-
     return 0;
 }
 
@@ -494,8 +501,8 @@ int qthread_cond_broadcast(qthread_cond_t *cond) {
 /* qthread_usleep - yield to next runnable thread, making arrangements
  * to be put back on the active list after 'usecs' timeout. 
  */
-int qthread_usleep(long int usecs) {
-
+int qthread_usleep(long int usecs) 
+{
     current->wakeupTime = gettime() + usecs;
     qthread_yield();
     return 0;
@@ -506,24 +513,25 @@ int qthread_usleep(long int usecs) {
  * file descriptors to go in the big scheduling 'select()' and switch
  * to another thread.
  */
-ssize_t qthread_read(int sockfd, void *buf, size_t len) {
-
+ssize_t qthread_read(int sockfd, void *buf, size_t len) 
+{
     /* set non-blocking mode every time. If we added some more
      * wrappers we could set non-blocking mode from the beginning, but
      * this is a lot simpler (if less efficient)
      */
     int tmp = fcntl(sockfd, F_GETFL, 0);
     fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
-
     ssize_t buf_len;
-
     buf_len  = read(sockfd, (char*)buf, len);
 
     if(atoi((char*)buf) == -1)
-	qthread_usleep(1);
+    {
+        qthread_usleep(1);
+    {
     else
-    	puts((char*)buf);
-	 
+    {
+        puts((char*)buf);
+    }     
     return buf_len;
 }
 
@@ -532,8 +540,8 @@ ssize_t qthread_read(int sockfd, void *buf, size_t len) {
  * and switch to another thread. Note that accept() counts as a 'read'
  * for the select call.
  */
-int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
-
+int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) 
+{
     //int tmp = fcntl(sockfd, F_GETFL, 0);
     //fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
 
@@ -546,8 +554,8 @@ int qthread_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
  * - it can block if the network is slow, although it's not likely to
  * in most of our testing.
  */
-ssize_t qthread_write(int sockfd, const void *buf, size_t len) {
-
+ssize_t qthread_write(int sockfd, const void *buf, size_t len) 
+{
     int tmp = fcntl(sockfd, F_GETFL, 0);
     fcntl(sockfd, F_SETFL, tmp | O_NONBLOCK);
 
@@ -559,5 +567,3 @@ ssize_t qthread_write(int sockfd, const void *buf, size_t len) {
 
     return bytes_sent;
 }
-
-//int main(){return 1;}
